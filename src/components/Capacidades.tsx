@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Capability } from '../types';
 import { useLanguage } from '../i18n/LanguageContext';
+import { useTitleReveal } from '../hooks/useTitleReveal';
 import { ArrowUpRight, Check } from 'lucide-react';
 
 interface CapacidadesProps {
@@ -8,7 +9,8 @@ interface CapacidadesProps {
 }
 
 export const Capacidades: React.FC<CapacidadesProps> = ({ onOpenContact }) => {
-  const { t } = useLanguage();
+  const { lang, t } = useLanguage();
+  const titleRef = useTitleReveal<HTMLHeadingElement>(lang);
   const [hoveredCapability, setHoveredCapability] = useState<Capability | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [mousePos, setMousePos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -47,7 +49,7 @@ export const Capacidades: React.FC<CapacidadesProps> = ({ onOpenContact }) => {
               {t.capabilities.tagLabel}
             </span>
           </div>
-          <h2 className="font-headline text-[36px] sm:text-[44px] lg:text-[54px] lg:leading-[58px] uppercase tracking-tighter text-primary font-bold">
+          <h2 key={lang} ref={titleRef} className="font-headline text-[36px] sm:text-[44px] lg:text-[54px] lg:leading-[58px] uppercase tracking-tighter text-primary font-bold">
             {t.capabilities.title}
           </h2>
         </div>

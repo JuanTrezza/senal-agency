@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { scrollToId } from '../lib/scroll';
+import { gsap, MQ, SplitText, useGSAP } from '../lib/motion';
 import { useLanguage } from '../i18n/LanguageContext';
 import { Play } from 'lucide-react';
 
@@ -8,9 +9,77 @@ interface HeroProps {
 }
 
 export const Hero: React.FC<HeroProps> = ({ onOpenShowreel }) => {
-  const { t } = useLanguage();
+  const { lang, t } = useLanguage();
   const [videoError, setVideoError] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const headlineRef = useRef<HTMLHeadingElement | null>(null);
+  const reelCardRef = useRef<HTMLButtonElement | null>(null);
+  const reelMediaRef = useRef<HTMLSpanElement | null>(null);
+  const headlineRevealed = useRef(false);
+
+  // Reveal del titular al cargar. Solo se parten los spans de texto ([data-hero-words]):
+  // la tarjeta del reel queda fuera del split para que React conserve el botón y el video.
+  // Al cambiar de idioma los spans se remontan (key={lang}) y se vuelven a partir sin animar.
+  useGSAP(
+    () => {
+      const headline = headlineRef.current;
+      const card = reelMediaRef.current;
+      if (!headline || !card) return;
+      const parts = gsap.utils.toArray<HTMLElement>('[data-hero-words]', headline);
+
+      const mm = gsap.matchMedia();
+      mm.add({ desktop: MQ.desktop, mobile: MQ.mobile }, (ctx) => {
+        const { desktop } = ctx.conditions as { desktop: boolean };
+
+        SplitText.create(parts, {
+          type: 'words',
+          mask: 'words',
+          wordsClass: 'reveal-word',
+          autoSplit: true,
+          onSplit: (self) => {
+            if (headlineRevealed.current) return;
+            return gsap
+              .timeline({
+                delay: 0.15,
+                onComplete: () => {
+                  headlineRevealed.current = true;
+                },
+              })
+              .from(self.words, {
+                yPercent: 120,
+                duration: desktop ? 1.2 : 0.9,
+                stagger: desktop ? 0.09 : 0.06,
+                ease: 'expo.out',
+              })
+              .from(card, { autoAlpha: 0, scale: 0.92, duration: 0.8, ease: 'expo.out' }, 0.35);
+          },
+        });
+      });
+    },
+    { scope: headlineRef, dependencies: [lang], revertOnUpdate: true }
+  );
+
+  // Parallax suave de la tarjeta del reel al scrollear fuera del hero (solo desktop).
+  // Mueve el botón; el reveal anima el span interno, así sus transforms no se pisan.
+  useGSAP(
+    () => {
+      const mm = gsap.matchMedia();
+      mm.add(MQ.desktop, () => {
+        gsap.to(reelCardRef.current, {
+          y: -56,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: 'top top',
+            end: 'bottom top',
+            scrub: true,
+          },
+        });
+      });
+    },
+    { scope: sectionRef }
+  );
 
   const fallbackImageUrl =
     'https://lh3.googleusercontent.com/aida-public/AB6AXuAaE7kBNGFPgKTzSo4kEWoluc4grKSvAQxrzTNxImlohsZCsgkoGjaekNBPpZ5NIsNm_Ows1MPZmtTBEli6SkQ0hVXq44q8LeCgwIGZswkOEn_ulsxHKMCMnv04yQtBywe6nUaFMqSJuPX_w-dT7BDmfMPltQPvZsVWpFMP3__rodU-gUkhM3NDIlVf6ilTV1gqccOThUDY5B_G_BnmarkapMb6tzM_3MxoyAzmC50M7XBTEWieo117mQ';
@@ -20,6 +89,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenShowreel }) => {
 
   return (
     <section
+      ref={sectionRef}
       id="hero"
       className="w-full px-gutter-mobile lg:px-margin pt-space-lg lg:pt-space-xl pb-space-xl border-b border-outline-variant bg-surface relative"
     >
@@ -42,14 +112,19 @@ export const Hero: React.FC<HeroProps> = ({ onOpenShowreel }) => {
 
       {/* Massive Typographic Headline with Integrated Reel Card */}
       <div className="w-full mb-space-xl">
-        <h1 className="font-headline text-[48px] sm:text-[68px] lg:text-[104px] uppercase tracking-tighter text-primary leading-[0.88] break-words font-black">
+        <h1 ref={headlineRef} className="font-headline text-[48px] sm:text-[68px] lg:text-[104px] uppercase tracking-tighter text-primary leading-[0.88] break-words font-black">
           <span className="block">
-            {t.hero.headlinePart1}
+            <span key={lang} data-hero-words>
+              {t.hero.headlinePart1}
+            </span>
           </span>
           <span className="block mt-2 lg:mt-3">
-            {t.hero.headlinePart2}
+            <span key={lang} data-hero-words>
+              {t.hero.headlinePart2}
+            </span>
             {/* Inline Video Showreel Card */}
             <button
+              ref={reelCardRef}
               type="button"
               onClick={(e) => onOpenShowreel(e.currentTarget)}
               onKeyDown={(e) => {
@@ -61,7 +136,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenShowreel }) => {
               className="inline-block align-middle mx-1 lg:mx-3 relative group cursor-pointer my-2 lg:my-0 text-left"
               aria-label={t.hero.reelPlayAria}
             >
-              <span className="block w-[140px] sm:w-[170px] lg:w-[220px] h-[58px] sm:h-[70px] lg:h-[86px] bg-primary relative overflow-hidden border border-primary">
+              <span ref={reelMediaRef} className="block w-[140px] sm:w-[170px] lg:w-[220px] h-[58px] sm:h-[70px] lg:h-[86px] bg-primary relative overflow-hidden border border-primary">
                 {!videoError ? (
                   <video
                     ref={videoRef}
@@ -105,7 +180,11 @@ export const Hero: React.FC<HeroProps> = ({ onOpenShowreel }) => {
               </span>
             </button>
           </span>
-          <span className="block mt-1">{t.hero.headlinePart3}</span>
+          <span className="block mt-1">
+            <span key={lang} data-hero-words>
+              {t.hero.headlinePart3}
+            </span>
+          </span>
         </h1>
       </div>
 

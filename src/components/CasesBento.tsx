@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { CaseStudy, DisciplineFilter } from '../types';
 import { useLanguage } from '../i18n/LanguageContext';
+import { useTitleReveal } from '../hooks/useTitleReveal';
 import { CaseModal } from './CaseModal';
 
 interface CasesBentoProps {
@@ -8,7 +9,8 @@ interface CasesBentoProps {
 }
 
 export const CasesBento: React.FC<CasesBentoProps> = ({ onOpenContact }) => {
-  const { t } = useLanguage();
+  const { lang, t } = useLanguage();
+  const titleRef = useTitleReveal<HTMLHeadingElement>(lang);
   const [selectedDiscipline, setSelectedDiscipline] = useState<DisciplineFilter>('todos');
   const [activeCase, setActiveCase] = useState<CaseStudy | null>(null);
   const [activeTrigger, setActiveTrigger] = useState<HTMLElement | null>(null);
@@ -53,7 +55,7 @@ export const CasesBento: React.FC<CasesBentoProps> = ({ onOpenContact }) => {
               {t.cases.tagLabel}
             </span>
           </div>
-          <h2 className="font-headline text-[36px] sm:text-[44px] lg:text-[54px] lg:leading-[58px] uppercase tracking-tighter text-primary font-bold">
+          <h2 key={lang} ref={titleRef} className="font-headline text-[36px] sm:text-[44px] lg:text-[54px] lg:leading-[58px] uppercase tracking-tighter text-primary font-bold">
             {t.cases.title}
           </h2>
         </div>

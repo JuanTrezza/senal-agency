@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLanguage } from '../i18n/LanguageContext';
+import { useTitleReveal } from '../hooks/useTitleReveal';
 import { ArrowUpRight } from 'lucide-react';
 
 interface CtaSectionProps {
@@ -7,7 +8,8 @@ interface CtaSectionProps {
 }
 
 export const CtaSection: React.FC<CtaSectionProps> = ({ onOpenContact }) => {
-  const { t } = useLanguage();
+  const { lang, t } = useLanguage();
+  const titleRef = useTitleReveal<HTMLHeadingElement>(lang);
 
   return (
     <section
@@ -31,7 +33,7 @@ export const CtaSection: React.FC<CtaSectionProps> = ({ onOpenContact }) => {
           <span>{t.cta.pill}</span>
         </div>
 
-        <h2 className="font-headline text-4xl sm:text-6xl lg:text-[88px] lg:leading-[88px] uppercase tracking-tighter font-extrabold text-white mb-space-lg">
+        <h2 key={lang} ref={titleRef} className="font-headline text-4xl sm:text-6xl lg:text-[88px] lg:leading-[88px] uppercase tracking-tighter font-extrabold text-white mb-space-lg">
           {t.cta.titleLine1}
           <br />
           {t.cta.titleLine2}

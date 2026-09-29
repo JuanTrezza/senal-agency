@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../i18n/LanguageContext';
+import { useTitleReveal } from '../hooks/useTitleReveal';
 import { ArrowUpRight, Check, Plus, Minus } from 'lucide-react';
 
 interface FaqSectionProps {
@@ -7,7 +8,8 @@ interface FaqSectionProps {
 }
 
 export const FaqSection: React.FC<FaqSectionProps> = ({ onOpenContact }) => {
-  const { t } = useLanguage();
+  const { lang, t } = useLanguage();
+  const titleRef = useTitleReveal<HTMLHeadingElement>(lang);
   const [openId, setOpenId] = useState<string | null>('onboarding-proceso');
 
   const toggleItem = (id: string) => {
@@ -30,7 +32,7 @@ export const FaqSection: React.FC<FaqSectionProps> = ({ onOpenContact }) => {
               {t.faqs.tagLabel}
             </span>
           </div>
-          <h2 className="font-headline text-[36px] sm:text-[44px] lg:text-[54px] lg:leading-[58px] uppercase tracking-tighter text-primary font-bold">
+          <h2 key={lang} ref={titleRef} className="font-headline text-[36px] sm:text-[44px] lg:text-[54px] lg:leading-[58px] uppercase tracking-tighter text-primary font-bold">
             {t.faqs.title}
           </h2>
         </div>
