@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ContactFormData, ContactFormErrors } from '../types';
 import { useFocusTrap } from '../hooks/useFocusTrap';
+import { useLenisLock } from '../hooks/useLenisLock';
 import { useLanguage } from '../i18n/LanguageContext';
 import { X, Send } from 'lucide-react';
 
@@ -34,6 +35,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
 
   // Focus trap hook ensures keyboard trap and focus restoration to trigger
   const modalRef = useFocusTrap(isOpen, onClose, triggerElement);
+  useLenisLock(isOpen);
 
   if (!isOpen) return null;
 
@@ -114,6 +116,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
         <form
           onSubmit={handleSubmit}
           noValidate
+          data-lenis-prevent
           className="p-space-md lg:p-space-lg overflow-y-auto space-y-space-md"
         >
           <div>

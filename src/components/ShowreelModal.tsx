@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { useFocusTrap } from '../hooks/useFocusTrap';
+import { useLenisLock } from '../hooks/useLenisLock';
 import { useLanguage } from '../i18n/LanguageContext';
 import { X, Volume2, VolumeX } from 'lucide-react';
 
@@ -20,6 +21,7 @@ export const ShowreelModal: React.FC<ShowreelModalProps> = ({
 
   // Focus trap hook ensures Esc handling, tab containment and focus return to reel card
   const modalRef = useFocusTrap(isOpen, onClose, triggerElement);
+  useLenisLock(isOpen);
 
   if (!isOpen) return null;
 

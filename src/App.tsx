@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useTheme } from './hooks/useTheme';
+import { useSmoothScroll } from './hooks/useSmoothScroll';
 import { LanguageProvider, useLanguage } from './i18n/LanguageContext';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
@@ -17,6 +18,7 @@ import { ShowreelModal } from './components/ShowreelModal';
 import { Toast } from './components/Toast';
 
 function AppContent() {
+  useSmoothScroll();
   const { theme, toggleTheme } = useTheme();
   const { t } = useLanguage();
   const [isContactOpen, setIsContactOpen] = useState(false);

@@ -1,6 +1,7 @@
 import React from 'react';
 import { CaseStudy } from '../types';
 import { useFocusTrap } from '../hooks/useFocusTrap';
+import { useLenisLock } from '../hooks/useLenisLock';
 import { useLanguage } from '../i18n/LanguageContext';
 import { X, ArrowUpRight, Award } from 'lucide-react';
 
@@ -19,6 +20,7 @@ export const CaseModal: React.FC<CaseModalProps> = ({
 }) => {
   const { t } = useLanguage();
   const modalRef = useFocusTrap(!!caseStudy, onClose, triggerElement);
+  useLenisLock(!!caseStudy);
 
   if (!caseStudy) return null;
 
@@ -61,7 +63,7 @@ export const CaseModal: React.FC<CaseModalProps> = ({
         </div>
 
         {/* Modal Content Scrollable Area */}
-        <div className="overflow-y-auto p-space-md lg:p-space-lg space-y-space-lg">
+        <div data-lenis-prevent className="overflow-y-auto p-space-md lg:p-space-lg space-y-space-lg">
           {/* Media Header (Video/Cover) */}
           <div className="relative w-full aspect-video bg-primary overflow-hidden border border-outline-variant">
             <video

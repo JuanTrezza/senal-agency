@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useBuenosAiresTime } from '../hooks/useBuenosAiresTime';
+import { useLenisLock } from '../hooks/useLenisLock';
 import { scrollToId } from '../lib/scroll';
 import { ThemeMode } from '../hooks/useTheme';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -21,6 +22,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const hamburgerBtnRef = useRef<HTMLButtonElement | null>(null);
   const contactBtnRef = useRef<HTMLButtonElement | null>(null);
+
+  // Pausa el scroll suave de la página mientras el menú mobile está abierto
+  useLenisLock(mobileMenuOpen);
 
   const handleNavClick = (id: string) => {
     setMobileMenuOpen(false);
@@ -187,6 +191,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       {mobileMenuOpen && (
         <div
           id="mobile-menu-drawer"
+          data-lenis-prevent
           className="lg:hidden fixed inset-0 top-16 bg-surface z-40 flex flex-col justify-between p-gutter-mobile border-t border-outline-variant overflow-y-auto"
           role="dialog"
           aria-modal="true"
