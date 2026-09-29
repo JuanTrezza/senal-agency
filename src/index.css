@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-surface: #F2EFE8;
+    --color-surface-bright: #FCF9F2;
+    --color-surface-variant: #E5E2DB;
+    --color-surface-container: #EAE6DD;
+    --color-surface-container-low: #F6F3EC;
+    --color-surface-container-high: #E5E2DB;
+    --color-surface-container-highest: #DDD9D0;
+    --color-primary: #111111;
+    --color-on-primary: #FFFFFF;
+    --color-on-surface: #111111;
+    --color-on-surface-variant: #555555;
+    --color-secondary: #2B3BFF;
+    --color-secondary-container: #2B3BFF;
+    --color-on-secondary: #FFFFFF;
+    --color-secondary-text: #2B3BFF;
+    --color-outline: #747878;
+    --color-outline-variant: #D9D5CC;
+    --color-rule: #D9D5CC;
+    --color-cream: #F2EFE8;
+    --color-ink: #111111;
+    --color-electric: #2B3BFF;
+    --color-cta-bg: #2B3BFF;
+    --color-cta-text: #FFFFFF;
+  }
+
+  .dark {
+    --color-surface: #0E0E0E;
+    --color-surface-bright: #141414;
+    --color-surface-variant: #202020;
+    --color-surface-container: #181818;
+    --color-surface-container-low: #121212;
+    --color-surface-container-high: #222222;
+    --color-surface-container-highest: #2C2C2C;
+    --color-primary: #F2EFE8;
+    --color-on-primary: #111111;
+    --color-on-surface: #F2EFE8;
+    --color-on-surface-variant: #A2A2A2;
+    --color-secondary: #7080FF;
+    --color-secondary-container: #7080FF;
+    --color-on-secondary: #0E0E0E;
+    --color-secondary-text: #7080FF;
+    --color-outline: #8E9292;
+    --color-outline-variant: #2A2A2A;
+    --color-rule: #2A2A2A;
+    --color-cream: #F2EFE8;
+    --color-ink: #0E0E0E;
+    --color-electric: #7080FF;
+    --color-cta-bg: #2B3BFF;
+    --color-cta-text: #FFFFFF;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--color-surface);
+    color: var(--color-on-surface);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  ::selection {
+    background-color: var(--color-secondary-container);
+    color: var(--color-on-secondary);
+  }
+
+  /* High contrast focus indicator on keyboard navigation */
+  :focus-visible {
+    outline: 2px solid var(--color-secondary-container) !important;
+    outline-offset: 2px !important;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-surface);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-outline-variant);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-primary);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

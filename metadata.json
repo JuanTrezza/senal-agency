@@ -1,0 +1,6 @@
+{
+  "name": "SEÑAL® — Agencia Creativa Latinoamericana",
+  "description": "Agencia creativa y estratégica independiente con base en Buenos Aires. Hacemos que las marcas se escuchen.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
