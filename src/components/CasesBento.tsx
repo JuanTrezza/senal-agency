@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { CaseStudy, DisciplineFilter } from '../types';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useTitleReveal } from '../hooks/useTitleReveal';
+import { gsap, MQ, ScrollTrigger, useGSAP } from '../lib/motion';
 import { CaseModal } from './CaseModal';
 
 interface CasesBentoProps {
@@ -14,6 +15,40 @@ export const CasesBento: React.FC<CasesBentoProps> = ({ onOpenContact }) => {
   const [selectedDiscipline, setSelectedDiscipline] = useState<DisciplineFilter>('todos');
   const [activeCase, setActiveCase] = useState<CaseStudy | null>(null);
   const [activeTrigger, setActiveTrigger] = useState<HTMLElement | null>(null);
+  const gridRef = useRef<HTMLDivElement | null>(null);
+
+  // Entrada escalonada de las cards por tandas; se rearma (y repite) al cambiar el filtro.
+  // Solo opacidad + y: las cards ocultas siguen siendo enfocables con teclado.
+  useGSAP(
+    () => {
+      const grid = gridRef.current;
+      if (!grid) return;
+      const cards = gsap.utils.toArray<HTMLElement>('[data-case-card]', grid);
+      // Las cards que siguen montadas pueden tener una entrada del filtro anterior en curso
+      gsap.killTweensOf(cards);
+
+      const mm = gsap.matchMedia();
+      mm.add({ desktop: MQ.desktop, mobile: MQ.mobile }, (ctx) => {
+        const { desktop } = ctx.conditions as { desktop: boolean };
+
+        gsap.set(cards, { opacity: 0, y: desktop ? 56 : 28 });
+        ScrollTrigger.batch(cards, {
+          start: 'top 90%',
+          once: true,
+          onEnter: (batch) =>
+            gsap.to(batch, {
+              opacity: 1,
+              y: 0,
+              duration: desktop ? 0.9 : 0.7,
+              stagger: desktop ? 0.12 : 0.08,
+              ease: 'expo.out',
+              overwrite: true,
+            }),
+        });
+      });
+    },
+    { scope: gridRef, dependencies: [selectedDiscipline], revertOnUpdate: true }
+  );
 
   const casesList = t.cases.items as readonly CaseStudy[];
 
@@ -91,7 +126,7 @@ export const CasesBento: React.FC<CasesBentoProps> = ({ onOpenContact }) => {
       </div>
 
       {/* Bento Grid (12-col structure) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-space-md">
+      <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-space-md">
         {filteredCases.map((caseItem) => (
           <CaseItemCard
             key={caseItem.id}
@@ -157,10 +192,11 @@ const CaseItemCard: React.FC<CaseItemCardProps> = ({ caseStudy, onSelect }) => {
   return (
     <article
       ref={cardRef}
+      data-case-card
       tabIndex={0}
       role="button"
       aria-label={`${t.cases.cardAriaPrefix} ${caseStudy.title} ${t.cases.forClient} ${caseStudy.client}`}
-      className={`${caseStudy.colSpan} group relative bg-surface-container border border-outline-variant hover:border-primary transition-all flex flex-col justify-between overflow-hidden cursor-pointer`}
+      className={`${caseStudy.colSpan} group relative bg-surface-container border border-outline-variant hover:border-primary transition-colors flex flex-col justify-between overflow-hidden cursor-pointer`}
       onClick={() => {
         if (cardRef.current) onSelect(cardRef.current);
       }}

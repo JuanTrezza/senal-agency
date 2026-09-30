@@ -1,8 +1,12 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Capability } from '../types';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useTitleReveal } from '../hooks/useTitleReveal';
+import { gsap, useGSAP } from '../lib/motion';
 import { ArrowUpRight, Check } from 'lucide-react';
+
+/** Desplazamiento horizontal de la preview respecto del cursor (px) */
+const PREVIEW_OFFSET_X = 140;
 
 interface CapacidadesProps {
   readonly onOpenContact: (triggerElement?: HTMLElement | null) => void;
@@ -11,22 +15,61 @@ interface CapacidadesProps {
 export const Capacidades: React.FC<CapacidadesProps> = ({ onOpenContact }) => {
   const { lang, t } = useLanguage();
   const titleRef = useTitleReveal<HTMLHeadingElement>(lang);
-  const [hoveredCapability, setHoveredCapability] = useState<Capability | null>(null);
+  // Se guarda el id (no el objeto) para que la preview siga el idioma activo,
+  // y se conserva al salir para que la imagen no desaparezca antes del fade.
+  const [previewId, setPreviewId] = useState<string | null>(null);
+  const [isPreviewVisible, setIsPreviewVisible] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [mousePos, setMousePos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const previewRef = useRef<HTMLDivElement | null>(null);
+  const snapPreviewRef = useRef<((x: number, y: number) => void) | null>(null);
 
   const capabilitiesList = t.capabilities.items as readonly Capability[];
+  const previewCapability = capabilitiesList.find((cap) => cap.id === previewId) ?? null;
 
-  // Smooth mouse tracker for desktop floating preview
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePos({ x: e.clientX, y: e.clientY });
-    };
+  // Preview flotante que sigue al mouse (solo desktop), sin re-renders: gsap.quickTo
+  // interpola x/y hacia el cursor. Con reduced-motion sigue al cursor sin suavizado.
+  useGSAP(
+    () => {
+      const section = containerRef.current;
+      const preview = previewRef.current;
+      if (!section || !preview) return;
 
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
+      const mm = gsap.matchMedia();
+      mm.add(
+        {
+          smooth: '(min-width: 1024px) and (prefers-reduced-motion: no-preference)',
+          reduce: '(min-width: 1024px) and (prefers-reduced-motion: reduce)',
+        },
+        (ctx) => {
+          const { smooth } = ctx.conditions as { smooth: boolean };
+          gsap.set(preview, { xPercent: -50, yPercent: -50 });
+
+          const duration = smooth ? 0.5 : 0;
+          const xTo = gsap.quickTo(preview, 'x', { duration, ease: 'power3.out' });
+          const yTo = gsap.quickTo(preview, 'y', { duration, ease: 'power3.out' });
+
+          const handleMouseMove = (e: MouseEvent) => {
+            xTo(e.clientX + PREVIEW_OFFSET_X);
+            yTo(e.clientY);
+          };
+          section.addEventListener('mousemove', handleMouseMove);
+
+          // Al entrar a la lista la preview salta al cursor en vez de viajar desde donde quedó
+          snapPreviewRef.current = (x, y) => {
+            xTo(x + PREVIEW_OFFSET_X, x + PREVIEW_OFFSET_X);
+            yTo(y, y);
+          };
+
+          return () => {
+            section.removeEventListener('mousemove', handleMouseMove);
+            snapPreviewRef.current = null;
+          };
+        }
+      );
+    },
+    { scope: containerRef }
+  );
 
   const toggleExpand = (id: string) => {
     setExpandedId((prev) => (prev === id ? null : id));
@@ -59,7 +102,10 @@ export const Capacidades: React.FC<CapacidadesProps> = ({ onOpenContact }) => {
       </div>
 
       {/* Editorial Interactive List */}
-      <div className="flex flex-col border-t border-outline-variant">
+      <div
+        className="flex flex-col border-t border-outline-variant"
+        onMouseEnter={(e) => snapPreviewRef.current?.(e.clientX, e.clientY)}
+      >
         {capabilitiesList.map((cap) => {
           const isExpanded = expandedId === cap.id;
 
@@ -80,8 +126,11 @@ export const Capacidades: React.FC<CapacidadesProps> = ({ onOpenContact }) => {
                     toggleExpand(cap.id);
                   }
                 }}
-                onMouseEnter={() => setHoveredCapability(cap)}
-                onMouseLeave={() => setHoveredCapability(null)}
+                onMouseEnter={() => {
+                  setPreviewId(cap.id);
+                  setIsPreviewVisible(true);
+                }}
+                onMouseLeave={() => setIsPreviewVisible(false)}
                 className="group py-space-md lg:py-space-lg flex flex-col lg:flex-row lg:items-center justify-between gap-space-md hover:bg-surface transition-colors px-2 lg:px-4 cursor-pointer focus:outline-none focus:bg-surface"
               >
                 {/* Index & Title */}
@@ -157,29 +206,29 @@ export const Capacidades: React.FC<CapacidadesProps> = ({ onOpenContact }) => {
       </div>
 
       {/* Floating Hover Image Preview (Desktop Only, Follows Mouse) */}
-      {hoveredCapability && (
-        <div
-          className="hidden lg:block fixed pointer-events-none z-40 transition-opacity duration-150 transform -translate-x-1/2 -translate-y-1/2"
-          style={{
-            left: `${mousePos.x + 140}px`,
-            top: `${mousePos.y}px`,
-          }}
-          aria-hidden="true"
-        >
+      {/* Siempre montada para que quickTo tenga destino; se muestra por opacidad */}
+      <div
+        ref={previewRef}
+        className={`hidden lg:block fixed left-0 top-0 pointer-events-none z-40 transition-opacity duration-150 ${
+          isPreviewVisible && previewCapability ? 'opacity-100' : 'opacity-0'
+        }`}
+        aria-hidden="true"
+      >
+        {previewCapability && (
           <div className="w-[280px] h-[180px] bg-primary border-2 border-primary overflow-hidden shadow-[6px_6px_0px_var(--color-primary)]">
             <img
-              src={hoveredCapability.previewImage}
-              alt={`${t.capabilities.previewAltPrefix} ${hoveredCapability.title}`}
+              src={previewCapability.previewImage}
+              alt={`${t.capabilities.previewAltPrefix} ${previewCapability.title}`}
               className="w-full h-full object-cover"
               loading="lazy"
             />
             <div className="absolute inset-0 bg-secondary-container/15 mix-blend-multiply" />
             <div className="absolute bottom-2 left-2 right-2 bg-primary/90 text-on-primary p-1 text-center font-mono text-[9px] uppercase tracking-wider">
-              {hoveredCapability.title}
+              {previewCapability.title}
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </section>
   );
 };

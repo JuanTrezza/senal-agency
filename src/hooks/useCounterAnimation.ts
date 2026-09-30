@@ -1,65 +1,65 @@
-import { useEffect, useState, useRef } from 'react';
+import { useState, useRef } from 'react';
+import { gsap, useGSAP } from '../lib/motion';
 
 /**
- * Hook para animar contadores numéricos al entrar en el viewport.
- * Respeta `prefers-reduced-motion` pasando al valor final de inmediato.
+ * Hook para animar contadores numéricos al entrar en el viewport (ScrollTrigger).
+ * El número lo sigue renderizando React (así respeta el formato del idioma) y solo
+ * se actualiza cuando cambia el entero. Con `prefers-reduced-motion` muestra el
+ * valor final de inmediato, también si la preferencia cambia con la página abierta.
  */
 export function useCounterAnimation(
   targetValue: number,
-  duration = 1800
+  duration = 1.8
 ): { readonly count: number; readonly elementRef: React.RefObject<HTMLDivElement | null> } {
   const [count, setCount] = useState<number>(0);
   const elementRef = useRef<HTMLDivElement | null>(null);
   const hasAnimatedRef = useRef<boolean>(false);
 
-  useEffect(() => {
-    const element = elementRef.current;
-    if (!element) return;
+  useGSAP(
+    () => {
+      const element = elementRef.current;
+      if (!element) return;
 
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const mm = gsap.matchMedia();
+      mm.add(
+        {
+          motion: '(prefers-reduced-motion: no-preference)',
+          reduce: '(prefers-reduced-motion: reduce)',
+        },
+        (ctx) => {
+          const { reduce } = ctx.conditions as { reduce: boolean };
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const [entry] = entries;
-        if (entry.isIntersecting && !hasAnimatedRef.current) {
-          hasAnimatedRef.current = true;
-
-          if (prefersReducedMotion) {
+          if (reduce || hasAnimatedRef.current) {
             setCount(targetValue);
             return;
           }
 
-          const startTime = performance.now();
+          const counter = { value: 0 };
+          let lastValue = 0;
 
-          const step = (currentTime: number) => {
-            const elapsed = currentTime - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-
-            // Easing out cubic: 1 - pow(1 - progress, 3)
-            const easeOutProgress = 1 - Math.pow(1 - progress, 3);
-            const currentVal = Math.floor(easeOutProgress * targetValue);
-
-            setCount(currentVal);
-
-            if (progress < 1) {
-              requestAnimationFrame(step);
-            } else {
+          gsap.to(counter, {
+            value: targetValue,
+            duration,
+            // Equivale al ease-out cubic de la versión anterior
+            ease: 'power2.out',
+            scrollTrigger: { trigger: element, start: 'top 85%', once: true },
+            onUpdate: () => {
+              const next = Math.floor(counter.value);
+              if (next !== lastValue) {
+                lastValue = next;
+                setCount(next);
+              }
+            },
+            onComplete: () => {
+              hasAnimatedRef.current = true;
               setCount(targetValue);
-            }
-          };
-
-          requestAnimationFrame(step);
+            },
+          });
         }
-      },
-      { threshold: 0.25 }
-    );
-
-    observer.observe(element);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [targetValue, duration]);
+      );
+    },
+    { scope: elementRef, dependencies: [targetValue, duration] }
+  );
 
   return { count, elementRef };
 }

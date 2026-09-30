@@ -78,15 +78,6 @@ export default {
         "space-xl": "4rem",
         "space-2xl": "7rem",
       },
-      keyframes: {
-        marquee: {
-          "0%": { transform: "translateX(0%)" },
-          "100%": { transform: "translateX(-50%)" },
-        },
-      },
-      animation: {
-        marquee: "marquee 28s linear infinite",
-      },
     },
   },
   plugins: [tailwindcssAnimate],
